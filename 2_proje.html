@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#0f1420">
+<title>RES Arıza Takip</title>
+<link rel="manifest" href="data:application/json,%7B%22name%22%3A%22G%C3%B6k%C3%A7eda%C4%9F%20Ar%C4%B1za%20Takip%22%2C%22short_name%22%3A%22Ar%C4%B1za%20Takip%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%230f1420%22%2C%22theme_color%22%3A%22%230f1420%22%7D">
+<style>
+  :root {
+    --bg:#0f1420; --card:#1a2233; --card2:#212b40; --line:#2c3752;
+    --txt:#e8ecf4; --muted:#8b97b3; --accent:#4f8cff; --accent2:#22c55e;
+    --danger:#ef4444; --warn:#f59e0b;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body {
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    background:var(--bg); color:var(--txt);
+    padding:16px 14px 40px; max-width:640px; margin:0 auto;
+  }
+  .header { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+  .header h1 { font-size:19px; font-weight:600; letter-spacing:-0.3px; }
+  .header .date { font-size:12px; color:var(--muted); margin-top:2px; }
+  .logo { width:38px; height:38px; border-radius:10px;
+          background:linear-gradient(135deg,#4f8cff,#22c55e);
+          display:flex; align-items:center; justify-content:center; font-size:20px; }
+  .refresh { background:var(--card2); border:1px solid var(--line); color:var(--muted);
+             border-radius:10px; padding:8px 10px; font-size:16px; cursor:pointer; }
+
+  .today-banner {
+    background:linear-gradient(135deg,#1e3a5f,#1a2540);
+    border:1px solid var(--line); border-radius:16px; padding:16px; margin-bottom:16px;
+  }
+  .today-banner .label { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; }
+  .today-banner .big { font-size:34px; font-weight:700; margin:4px 0; }
+  .today-banner .sub { font-size:13px; color:var(--muted); }
+
+  .kpi-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:20px; }
+  .kpi { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:13px 14px; }
+  .kpi .v { font-size:22px; font-weight:700; }
+  .kpi .k { font-size:11px; color:var(--muted); margin-top:3px; text-transform:uppercase; letter-spacing:0.4px; }
+
+  .section-title { font-size:13px; color:var(--muted); text-transform:uppercase; letter-spacing:0.6px;
+                   margin:22px 4px 10px; font-weight:600; }
+
+  .selector { position:relative; margin-bottom:14px; }
+  select {
+    width:100%; padding:15px 16px; font-size:16px; border-radius:14px;
+    background:var(--card2); color:var(--txt); border:1px solid var(--line);
+    appearance:none; -webkit-appearance:none; font-weight:500;
+  }
+  .selector::after { content:'▾'; position:absolute; right:18px; top:50%; transform:translateY(-50%);
+                     color:var(--muted); pointer-events:none; font-size:14px; }
+
+  .turbin-head { display:flex; align-items:center; justify-content:space-between;
+                 background:var(--card); border:1px solid var(--line); border-radius:14px 14px 0 0;
+                 padding:14px 16px; border-bottom:none; }
+  .turbin-head .name { font-size:20px; font-weight:700; }
+  .turbin-head .badge { background:var(--danger); color:#fff; font-size:13px; font-weight:600;
+                        padding:5px 12px; border-radius:20px; }
+  .turbin-stats { display:grid; grid-template-columns:repeat(3,1fr); background:var(--card);
+                  border:1px solid var(--line); border-top:none; }
+  .turbin-stats .st { padding:12px; text-align:center; border-right:1px solid var(--line); }
+  .turbin-stats .st:last-child { border-right:none; }
+  .turbin-stats .st .v { font-size:17px; font-weight:700; }
+  .turbin-stats .st .k { font-size:10px; color:var(--muted); margin-top:2px; text-transform:uppercase; }
+
+  .fault-list { border:1px solid var(--line); border-top:none; border-radius:0 0 14px 14px; overflow:hidden; }
+  .fault { background:var(--card); padding:13px 16px; border-top:1px solid var(--line); }
+  .fault:first-child { border-top:none; }
+  .fault .top { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+  .fault .code { font-size:14px; font-weight:600; line-height:1.35; }
+  .fault .dur { font-size:12px; color:var(--warn); font-weight:600; white-space:nowrap; }
+  .fault .meta { font-size:12px; color:var(--muted); margin-top:5px; line-height:1.5; }
+  .fault .meta .tag { display:inline-block; background:var(--card2); border-radius:6px;
+                      padding:2px 7px; margin-right:5px; margin-top:3px; }
+
+  .today-wrap { border:1px solid var(--line); border-radius:14px; overflow:hidden; }
+  .today-wrap .fault { border-radius:0; }
+  .empty { background:var(--card); border:1px solid var(--line); border-radius:14px;
+           padding:28px 16px; text-align:center; color:var(--muted); font-size:14px; }
+  .loader { text-align:center; padding:60px 0; color:var(--muted); }
+  .spinner { width:32px; height:32px; border:3px solid var(--line); border-top-color:var(--accent);
+             border-radius:50%; margin:0 auto 14px; animation:spin 0.8s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  .pill-row { display:flex; gap:8px; overflow-x:auto; padding-bottom:6px; margin-bottom:4px; }
+  .pill { flex:0 0 auto; background:var(--card); border:1px solid var(--line); border-radius:12px;
+          padding:10px 13px; min-width:88px; }
+  .pill .t { font-size:15px; font-weight:700; }
+  .pill .n { font-size:11px; color:var(--muted); margin-top:2px; }
+  .pill.hot { border-color:var(--danger); }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <h1>RES Arıza Takip</h1>
+      <div class="date" id="dateLabel">—</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button class="refresh" onclick="loadData()" title="Yenile">⟳</button>
+      <div class="logo">🌬️</div>
+    </div>
+  </div>
+
+  <div id="app"><div class="loader"><div class="spinner"></div>Veriler yükleniyor...</div></div>
+
+<script>
+// ====== AYARLAR ======
+var SHEET_ID = 'SHEET_ID_BURAYA';
+var SHEET_NAME = 'Yanıtlar';
+// Kolon indeksleri (0'dan başlar): A=0 Zaman, B=1 Tarih, C=2 Türbin,
+// D=3 Arıza, E=4 Açıklama, F=5 Personel, G=6 Başlangıç, H=7 Bitiş, J=9 Süre
+var COL = { tarih:1, turbin:2, ariza:3, aciklama:4, personel:5, baslangic:6, bitis:7, sure:9 };
+// =====================
+
+var DATA = null;
+
+function loadData(){
+  document.getElementById('app').innerHTML =
+    '<div class="loader"><div class="spinner"></div>Veriler yükleniyor...</div>';
+  var url = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID +
+            '/gviz/tq?tqx=out:json&sheet=' + encodeURIComponent(SHEET_NAME) +
+            '&headers=1&_=' + Date.now();
+  fetch(url)
+    .then(function(r){ return r.text(); })
+    .then(function(txt){
+      var json = JSON.parse(txt.substring(txt.indexOf('{'), txt.lastIndexOf('}')+1));
+      var rows = json.table.rows || [];
+      processData(rows);
+    })
+    .catch(function(e){
+      document.getElementById('app').innerHTML =
+        '<div class="empty">Veri alınamadı.<br>Sheet paylaşımının "bağlantıya sahip herkes" olduğundan emin ol.<br><br><span style="font-size:11px">'+e.message+'</span></div>';
+    });
+}
+
+function cellVal(cell){
+  if (!cell) return '';
+  if (cell.f != null) return cell.f;  // formatlı değer (tarih/saat metni)
+  return cell.v != null ? cell.v : '';
+}
+function cellNum(cell){
+  if (!cell) return 0;
+  var v = cell.v;
+  return typeof v === 'number' ? v : (parseFloat(v) || 0);
+}
+
+function processData(rows){
+  var records = [];
+  var today = new Date();
+  var todayStr = pad(today.getDate())+'.'+pad(today.getMonth()+1)+'.'+today.getFullYear();
+
+  rows.forEach(function(row){
+    var c = row.c || [];
+    var turbin = String(cellVal(c[COL.turbin])||'').trim();
+    if (!turbin) return;
+
+    // Tarih: gviz Date objesi veya string olabilir
+    var tarihStr = normalizeDate(c[COL.tarih]);
+
+    records.push({
+      tarih: tarihStr,
+      turbin: turbin,
+      ariza: String(cellVal(c[COL.ariza])||'').trim(),
+      aciklama: String(cellVal(c[COL.aciklama])||''),
+      personel: String(cellVal(c[COL.personel])||''),
+      baslangic: String(cellVal(c[COL.baslangic])||''),
+      bitis: String(cellVal(c[COL.bitis])||''),
+      sure: cellNum(c[COL.sure])
+    });
+  });
+
+  var bugun = records.filter(function(x){ return x.tarih === todayStr; });
+  var toplamSure = records.reduce(function(a,x){ return a+x.sure; },0);
+  var bugunSure = bugun.reduce(function(a,x){ return a+x.sure; },0);
+
+  var turbinMap = {};
+  records.forEach(function(x){
+    if (!turbinMap[x.turbin]) turbinMap[x.turbin] = { adet:0, sure:0, arizalar:{} };
+    turbinMap[x.turbin].adet++;
+    turbinMap[x.turbin].sure += x.sure;
+    turbinMap[x.turbin].arizalar[x.ariza] = (turbinMap[x.turbin].arizalar[x.ariza]||0)+1;
+  });
+  var turbinler = Object.keys(turbinMap).sort().map(function(t){
+    var m = turbinMap[t], enCok='', enCokN=0;
+    Object.keys(m.arizalar).forEach(function(a){
+      if (m.arizalar[a]>enCokN){ enCokN=m.arizalar[a]; enCok=a; }
+    });
+    return { turbin:t, adet:m.adet, sure:m.sure, mttr:m.sure/m.adet, enCok:enCok };
+  });
+
+  DATA = {
+    tarih:todayStr, toplamMudahale:records.length, toplamSure:toplamSure,
+    mttr: records.length? toplamSure/records.length : 0,
+    bugunAdet:bugun.length, bugunSure:bugunSure, bugunKayitlar:bugun,
+    turbinler:turbinler, tumKayitlar:records
+  };
+  render();
+}
+
+function normalizeDate(cell){
+  if (!cell) return '';
+  // gviz Date: v = "Date(2026,6,10)" (ay 0-indexli) veya f = "10.07.2026"
+  if (cell.f) {
+    // f zaten dd.MM.yyyy ise direkt kullan
+    var f = String(cell.f);
+    var m = f.match(/(\d{1,2})[.\/](\d{1,2})[.\/](\d{4})/);
+    if (m) return pad(m[1])+'.'+pad(m[2])+'.'+m[3];
+  }
+  if (typeof cell.v === 'string'){
+    var dm = cell.v.match(/Date\((\d+),(\d+),(\d+)/);
+    if (dm) return pad(dm[3])+'.'+pad(+dm[2]+1)+'.'+dm[1];
+    var sm = cell.v.match(/(\d{1,2})[.\/](\d{1,2})[.\/](\d{4})/);
+    if (sm) return pad(sm[1])+'.'+pad(sm[2])+'.'+sm[3];
+  }
+  return String(cell.v||'');
+}
+function pad(n){ n=String(n); return n.length<2 ? '0'+n : n; }
+function fmt(n,d){ return Number(n).toFixed(d==null?1:d); }
+function esc(s){ return String(s).replace(/[&<>"]/g,function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+function render(){
+  var data = DATA;
+  document.getElementById('dateLabel').textContent = data.tarih + ' · bugün';
+  var top6 = data.turbinler.slice().sort(function(a,b){return b.adet-a.adet;}).slice(0,6);
+
+  var html = '';
+  html += '<div class="today-banner">'
+    + '<div class="label">Bugün gidilen arızalar</div>'
+    + '<div class="big">'+data.bugunAdet+'</div>'
+    + '<div class="sub">Toplam '+fmt(data.bugunSure)+' saat müdahale süresi</div></div>';
+
+  html += '<div class="kpi-grid">'
+    + kpi(data.toplamMudahale,'Toplam müdahale')
+    + kpi(fmt(data.toplamSure,0)+' s','Toplam duruş')
+    + kpi(fmt(data.mttr)+' s','Ort. MTTR')
+    + kpi(data.turbinler.length,'Arızalı türbin')
+    + '</div>';
+
+  html += '<div class="section-title">En çok müdahale gören</div><div class="pill-row">';
+  top6.forEach(function(t,i){
+    html += '<div class="pill '+(i===0?'hot':'')+'">'
+      + '<div class="t">'+esc(t.turbin)+'</div>'
+      + '<div class="n">'+t.adet+' arıza · '+fmt(t.sure,0)+'s</div></div>';
+  });
+  html += '</div>';
+
+  html += '<div class="section-title">Türbin detayı</div>';
+  html += '<div class="selector"><select id="turbinSelect" onchange="showTurbin(this.value)">'
+    + '<option value="">Türbin seçin...</option>';
+  data.turbinler.forEach(function(t){
+    html += '<option value="'+esc(t.turbin)+'">'+esc(t.turbin)+' ('+t.adet+' arıza)</option>';
+  });
+  html += '</select></div><div id="turbinDetail"></div>';
+
+  html += '<div class="section-title">Bugünün kayıtları</div>';
+  if (data.bugunKayitlar.length===0){
+    html += '<div class="empty">Bugün henüz arıza kaydı girilmedi.</div>';
+  } else {
+    html += '<div class="today-wrap">';
+    data.bugunKayitlar.forEach(function(r){ html += faultCard(r,true); });
+    html += '</div>';
+  }
+  document.getElementById('app').innerHTML = html;
+}
+
+function kpi(v,k){ return '<div class="kpi"><div class="v">'+v+'</div><div class="k">'+k+'</div></div>'; }
+
+function showTurbin(t){
+  var box = document.getElementById('turbinDetail');
+  if (!t){ box.innerHTML=''; return; }
+  var kayitlar = DATA.tumKayitlar.filter(function(x){ return x.turbin===t; });
+  var tinfo = DATA.turbinler.filter(function(x){ return x.turbin===t; })[0];
+
+  var html = '<div class="turbin-head"><div class="name">'+esc(t)+'</div>'
+    + '<div class="badge">'+tinfo.adet+' arıza</div></div>';
+  html += '<div class="turbin-stats">'
+    + '<div class="st"><div class="v">'+fmt(tinfo.sure,0)+'s</div><div class="k">Toplam duruş</div></div>'
+    + '<div class="st"><div class="v">'+fmt(tinfo.mttr)+'s</div><div class="k">Ort. MTTR</div></div>'
+    + '<div class="st"><div class="v">'+tinfo.adet+'</div><div class="k">Müdahale</div></div></div>';
+  html += '<div class="fault-list">';
+  kayitlar.forEach(function(r){ html += faultCard(r,false); });
+  html += '</div>';
+  box.innerHTML = html;
+}
+
+function faultCard(r, showTurbin){
+  var h = '<div class="fault"><div class="top">'
+    + '<div class="code">'+(showTurbin?esc(r.turbin)+' · ':'')+esc(r.ariza)+'</div>'
+    + '<div class="dur">'+fmt(r.sure)+' s</div></div><div class="meta">';
+  if (r.aciklama) h += '<span class="tag">'+esc(r.aciklama)+'</span><br>';
+  h += esc(r.tarih)+' · '+esc(r.baslangic)+'–'+esc(r.bitis);
+  if (r.personel) h += ' · '+esc(r.personel);
+  h += '</div></div>';
+  return h;
+}
+
+loadData();
+</script>
+</body>
+</html>
